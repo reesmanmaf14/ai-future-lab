@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+html{scroll-behavior:smooth;background:#050505}
+body{margin:0;background:#050505;color:#F5F7FA;font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+*{box-sizing:border-box}
+a{color:#F5F7FA;text-decoration:none}
+a:hover{color:#3FD3E8}
+::selection{background:#4C8DFF;color:#050505}
+:focus-visible{outline:2px solid #4C8DFF;outline-offset:3px}
+html.cc,html.cc *{cursor:none!important}
+html.cc textarea{cursor:text!important}
+body::after{content:"";position:fixed;inset:-50%;pointer-events:none;z-index:70;opacity:.05;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");animation:grain 1.2s steps(6) infinite}
+@keyframes grain{0%{transform:translate(0,0)}20%{transform:translate(-3%,2%)}40%{transform:translate(2%,-3%)}60%{transform:translate(-2%,-1%)}80%{transform:translate(3%,3%)}100%{transform:translate(0,0)}}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes pulse{0%,100%{opacity:.35;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+@keyframes drift{0%{transform:translateY(0)}50%{transform:translateY(8px)}100%{transform:translateY(0)}}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}body::after{animation:none}}
+</style>
+</helmet>
+
+<div ref="{{ rootRef }}" style="position:relative;background:#050505;color:#F5F7FA;min-height:100vh;overflow-x:clip">
+
+<sc-if value="{{ loaderShow }}" hint-placeholder-val="{{ true }}">
+  <div role="status" aria-live="polite" style="position:fixed;inset:0;z-index:100;background:#050505;display:flex;align-items:center;justify-content:center;padding:24px;opacity:{{ loaderOp }};pointer-events:{{ loaderPE }};transition:opacity .7s cubic-bezier(.16,.84,.3,1)">
+    <div style="width:100%;max-width:420px;display:flex;flex-direction:column;gap:28px;font-family:'JetBrains Mono',ui-monospace,monospace">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:500;letter-spacing:0.32em">AI FUTURE LAB</div>
+        <div style="font-size:11px;letter-spacing:0.22em;color:#8D96A3">INITIALIZING SYSTEM<span style="animation:blink 1s infinite">_</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <sc-for list="{{ loaderRows }}" as="row" hint-placeholder-count="4">
+          <div style="display:flex;align-items:baseline;gap:10px;font-size:11px;letter-spacing:0.16em;opacity:{{ row.op }};transition:opacity .25s">
+            <span>{{ row.name }}</span>
+            <span style="flex:1;border-bottom:1px dotted rgba(245,247,250,0.25);transform:translateY(-3px)"></span>
+            <span style="color:#3FD3E8">{{ row.val }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="height:1px;background:rgba(245,247,250,0.1);position:relative;overflow:hidden">
+        <div style="position:absolute;left:0;top:0;bottom:0;width:{{ loaderPct }};background:#F5F7FA;transition:width .3s ease"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;letter-spacing:0.22em">
+        <span style="color:{{ readyColor }}">{{ readyText }}</span>
+        <button onClick="{{ skipLoad }}" style="background:none;border:1px solid rgba(245,247,250,0.18);color:#8D96A3;font:inherit;letter-spacing:0.2em;padding:8px 12px;min-height:36px" style-hover="color:#F5F7FA;border-color:rgba(245,247,250,0.5)">SKIP →</button>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ fine }}" hint-placeholder-val="{{ false }}">
+  <div ref="{{ ringRef }}" aria-hidden="true" style="position:fixed;left:-18px;top:-18px;width:36px;height:36px;border:1px solid rgba(245,247,250,0.45);border-radius:50%;pointer-events:none;z-index:120;mix-blend-mode:difference;transform:translate(-100px,-100px)"></div>
+  <div ref="{{ dotRef }}" aria-hidden="true" style="position:fixed;left:-3px;top:-3px;width:6px;height:6px;background:#F5F7FA;border-radius:50%;pointer-events:none;z-index:121;transform:translate(-100px,-100px)"></div>
+</sc-if>
+
+<header style="position:fixed;top:0;left:0;right:0;z-index:50;padding:{{ navPad }};transition:padding .5s cubic-bezier(.16,.84,.3,1)">
+  <nav aria-label="Primary" style="max-width:1320px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:12px 14px 12px 20px;border:1px solid {{ navBorder }};background:{{ navBg }};backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-radius:2px;transition:background .5s,border-color .5s">
+    <a href="#top" style="display:flex;align-items:center;gap:12px;font-weight:500;font-size:14px;letter-spacing:0.3em;white-space:nowrap" aria-label="AI Future Lab, back to top">
+      <span style="width:9px;height:9px;border:1px solid #F5F7FA;transform:rotate(45deg)"></span>AI FUTURE LAB
+    </a>
+    <sc-if value="{{ navDesk }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;align-items:center;gap:32px;white-space:nowrap">
+        <ul style="display:flex;gap:28px;list-style:none;margin:0;padding:0">
+          <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="5">
+            <li style="position:relative">
+              <a href="{{ n.href }}" aria-current="{{ n.current }}" style="display:block;padding:8px 0;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:{{ n.color }};transition:color .3s" style-hover="color:#F5F7FA">{{ n.label }}</a>
+              <span style="position:absolute;left:0;bottom:2px;height:1px;width:{{ n.bar }};background:#3FD3E8;box-shadow:0 0 8px #3FD3E8;transition:width .45s cubic-bezier(.16,.84,.3,1)"></span>
+            </li>
+          </sc-for>
+        </ul>
+        <span data-magnetic="" style="display:inline-flex">
+          <a href="#neural" style="display:inline-flex;align-items:center;gap:10px;padding:11px 18px;border:1px solid rgba(245,247,250,0.28);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.2em;color:#F5F7FA;transition:all .3s" style-hover="background:#F5F7FA;color:#050505;gap:14px">ENTER LAB <span>→</span></a>
+        </span>
+      </div>
+    </sc-if>
+    <sc-if value="{{ navMob }}" hint-placeholder-val="{{ false }}">
+      <button onClick="{{ toggleMenu }}" aria-expanded="{{ menuOpen }}" aria-controls="mobile-menu" style="background:none;border:1px solid rgba(245,247,250,0.28);color:#F5F7FA;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.2em;padding:0 16px;min-height:44px">{{ menuLabel }}</button>
+    </sc-if>
+  </nav>
+</header>
+
+<sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+  <div id="mobile-menu" style="position:fixed;inset:0;z-index:45;background:rgba(5,5,5,0.97);backdrop-filter:blur(10px);padding:120px 24px 40px;display:flex;flex-direction:column;justify-content:space-between">
+    <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px">
+      <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="5">
+        <li style="border-bottom:1px solid rgba(245,247,250,0.08)">
+          <a href="{{ n.href }}" onClick="{{ closeMenu }}" style="display:flex;justify-content:space-between;align-items:baseline;padding:18px 0;font-size:34px;font-weight:400;letter-spacing:-0.02em;color:{{ n.mColor }}">{{ n.label }}<span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.2em;color:#8D96A3">{{ n.num }}</span></a>
+        </li>
+      </sc-for>
+    </ul>
+    <a href="#neural" onClick="{{ closeMenu }}" style="display:flex;justify-content:center;align-items:center;min-height:56px;background:#F5F7FA;color:#050505;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.22em">ENTER LAB →</a>
+  </div>
+</sc-if>
+
+<main>
+<!-- HERO -->
+<section id="top" data-screen-label="Hero" style="position:relative;min-height:100vh;min-height:100svh;display:flex;align-items:center;overflow:hidden;background:#050505">
+  <div data-reveal="fade" data-delay="0" aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(60% 55% at 68% 48%, rgba(76,141,255,0.10), transparent 70%),radial-gradient(40% 40% at 20% 90%, rgba(155,123,255,0.05), transparent 70%)"></div>
+  <div data-reveal="fade" data-delay="150" aria-hidden="true" style="position:absolute;inset:0;background-image:linear-gradient(rgba(245,247,250,0.045) 1px,transparent 1px),linear-gradient(90deg,rgba(245,247,250,0.045) 1px,transparent 1px);background-size:88px 88px;-webkit-mask-image:radial-gradient(70% 70% at 60% 50%,#000 30%,transparent 80%);mask-image:radial-gradient(70% 70% at 60% 50%,#000 30%,transparent 80%)"></div>
+  <canvas ref="{{ heroRef }}" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;display:block"></canvas>
+
+  <div style="position:relative;z-index:2;width:100%;max-width:1320px;margin:0 auto;padding:140px clamp(20px,5vw,64px) 120px">
+    <div style="max-width:980px;display:flex;flex-direction:column;gap:32px">
+      <div data-reveal="up" data-delay="200" style="display:flex;align-items:center;gap:14px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.24em;color:#8D96A3">
+        <span style="width:6px;height:6px;border-radius:50%;background:#3FD3E8;box-shadow:0 0 10px #3FD3E8"></span>AI FUTURE LAB / SYSTEM 01
+      </div>
+      <h1 style="margin:0;font-weight:500;font-size:clamp(34px,6.6vw,104px);line-height:0.96;letter-spacing:-0.035em">
+        <span style="display:block;overflow:hidden;padding-bottom:0.04em"><span data-reveal="mask" data-delay="320" style="display:block">EXPLORE</span></span>
+        <span style="display:block;overflow:hidden;padding-bottom:0.04em"><span data-reveal="mask" data-delay="440" style="display:block">THE INTELLIGENCE</span></span>
+        <span style="display:block;overflow:hidden;padding-bottom:0.04em"><span data-reveal="mask" data-delay="560" style="display:block;color:#8D96A3">OF TOMORROW.</span></span>
+      </h1>
+      <p data-reveal="up" data-delay="760" style="margin:0;max-width:460px;font-size:clamp(16px,1.3vw,18px);line-height:1.6;color:#AEB5BF;font-weight:300;text-wrap:pretty">An interactive journey through artificial intelligence, machine learning, generative systems and the technologies reshaping our future.</p>
+      <div data-reveal="up" data-delay="900" style="display:flex;flex-wrap:wrap;gap:14px;padding-top:8px">
+        <span data-magnetic="" style="display:inline-flex">
+          <a href="#neural" style="display:inline-flex;align-items:center;gap:14px;min-height:56px;padding:0 28px;background:#F5F7FA;color:#050505;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;letter-spacing:0.2em;transition:all .35s cubic-bezier(.16,.84,.3,1)" style-hover="gap:22px;box-shadow:0 0 0 1px #F5F7FA,0 10px 40px rgba(76,141,255,0.35);transform:translateY(-2px);color:#050505" style-active="transform:translateY(0) scale(.98)">ENTER THE LAB <span>→</span></a>
+        </span>
+        <span data-magnetic="" style="display:inline-flex">
+          <a href="#intelligence" style="display:inline-flex;align-items:center;min-height:56px;padding:0 28px;border:1px solid rgba(245,247,250,0.25);color:#F5F7FA;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.2em;transition:all .35s" style-hover="border-color:rgba(245,247,250,0.7);background:rgba(245,247,250,0.04);transform:translateY(-2px)">EXPLORE AI</a>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <sc-if value="{{ desktop }}" hint-placeholder-val="{{ true }}">
+    <div data-reveal="fade" data-delay="1100" aria-hidden="true" style="position:absolute;right:clamp(20px,5vw,64px);top:150px;z-index:2;display:flex;flex-direction:column;gap:18px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.2em;color:#8D96A3;text-align:right">
+      <div style="display:flex;flex-direction:column;gap:4px"><span>AI CORE</span><span style="color:#3FD3E8">ONLINE</span></div>
+      <div style="display:flex;flex-direction:column;gap:4px"><span>NODE_042</span><span style="color:#F5F7FA">CONNECTED</span></div>
+      <div style="display:flex;flex-direction:column;gap:4px"><span>LATENCY</span><span style="color:#F5F7FA">12ms</span></div>
+    </div>
+  </sc-if>
+  <div data-reveal="fade" data-delay="1200" style="position:absolute;left:0;right:0;bottom:28px;z-index:2;padding:0 clamp(20px,5vw,64px)">
+    <div style="max-width:1320px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:16px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.22em;color:#8D96A3">
+      <span style="display:flex;align-items:center;gap:10px"><span style="width:1px;height:28px;background:linear-gradient(#F5F7FA,transparent);animation:drift 2.4s ease-in-out infinite"></span>SCROLL TO EXPLORE</span>
+      <span>INTERACTIVE VISUAL SIMULATION</span>
+    </div>
+  </div>
+</section>
+
+<!-- INTELLIGENCE -->
+<section id="intelligence" data-screen-label="Intelligence" style="position:relative;padding:clamp(110px,13vw,180px) clamp(20px,5vw,64px);background:linear-gradient(#050505,#08090B)">
+  <div style="max-width:1320px;margin:0 auto;display:flex;flex-direction:column;gap:clamp(48px,6vw,80px)">
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:32px">
+      <div style="display:flex;flex-direction:column;gap:24px">
+        <div data-reveal="up" style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.24em;color:#8D96A3">INTELLIGENCE / 01</div>
+        <h2 style="margin:0;font-weight:500;font-size:clamp(40px,6vw,88px);line-height:0.95;letter-spacing:-0.035em">
+          <span style="display:block;overflow:hidden;padding-bottom:0.04em"><span data-reveal="mask" style="display:block">INTELLIGENCE,</span></span>
+          <span style="display:block;overflow:hidden;padding-bottom:0.04em"><span data-reveal="mask" data-delay="120" style="display:block;color:#8D96A3">DECODED.</span></span>
+        </h2>
+      </div>
+      <p data-reveal="up" data-delay="200" style="margin:0;max-width:380px;font-size:17px;line-height:1.6;color:#AEB5BF;font-weight:300;text-wrap:pretty">Explore the technologies that allow machines to learn, create, understand and interact with the world.</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:16px">
+      <div data-reveal="up" data-delay="0">
+        <article data-k="ml" data-cursor="" onMouseEnter="{{ cardEnter }}" onMouseMove="{{ cardMove }}" onMouseLeave="{{ cardLeave }}" style="height:100%;display:flex;flex-direction:column;gap:28px;padding:28px;background:linear-gradient(180deg,#0E1116,#0B0D10);border:1px solid rgba(245,247,250,0.08);transition:transform .45s cubic-bezier(.16,.84,.3,1),border-color .35s,box-shadow .45s;will-change:transform" style-hover="border-color:rgba(76,141,255,0.5);box-shadow:0 30px 80px -30px rgba(76,141,255,0.35)">
+          <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.22em;color:#8D96A3"><span>01 / LEARNING SYSTEMS</span><span style="color:#4C8DFF">↗</span></div>
+          <canvas ref="{{ mlRef }}" aria-hidden="true" style="display:block;width:100%;height:190px;border-top:1px solid rgba(245,247,250,0.06);border-bottom:1px solid rgba(245,247,250,0.06)"></canvas>
+          <h3 style="margin:0;font-weight:500;font-size:34px;line-height:1;letter-spacing:-0.02em">MACHINE<br>LEARNING</h3>
+          <p style="margin:0;font-size:15px;line-height:1.6;color:#8D96A3;text-wrap:pretty">Systems that learn patterns from data and improve their predictions through experience.</p>
+        </article>
+      </div>
+      <div data-reveal="up" data-delay="120">
+        <article data-k="gen" data-cursor="" onMouseEnter="{{ cardEnter }}" onMouseMove="{{ cardMove }}" onMouseLeave="{{ cardLeave }}" style="height:100%;display:flex;flex-direction:column;gap:28px;padding:28px;background:linear-gradient(180deg,#0E1116,#0B0D10);border:1px solid rgba(245,247,250,0.08);transition:transform .45s cubic-bezier(.16,.84,.3,1),border-color .35s,box-shadow .45s;will-change:transform" style-hover="border-color:rgba(155,123,255,0.5);box-shadow:0 30px 80px -30px rgba(155,123,255,0.35)">
+          <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.22em;color:#8D96A3"><span>02 / CREATIVE SYSTEMS</span><span style="color:#9B7BFF">↗</span></div>
+          <canvas ref="{{ genRef }}" aria-hidden="true" style="display:block;width:100%;height:190px;border-top:1px solid rgba(245,247,250,0.06);border-bottom:1px solid rgba(245,247,250,0.06)"></canvas>
+          <h3 style="margin:0;font-weight:500;font-size:34px;line-height:1;letter-spacing:-0.02em">GENERATIVE<br>AI</h3>
+          <p style="margin:0;font-size:15px;line-height:1.6;color:#8D96A3;text-wrap:pretty">Models capable of generating text, images, audio, code and entirely new forms of content.</p>
+        </article>
+      </div>
+      <div data-reveal="up" data-delay="240">
+        <article data-k="vis" data-cursor="" onMouseEnter="{{ cardEnter }}" onMouseMove="{{ cardMove }}" onMouseLeave="{{ cardLeave }}" style="height:100%;display:flex;flex-direction:column;gap:28px;padding:28px;background:linear-gradient(180deg,#0E1116,#0B0D10);border:1px solid rgba(245,247,250,0.08);transition:transform .45s cubic-bezier(.16,.84,.3,1),border-color .35s,box-shadow .45s;will-change:transform" style-hover="border-color:rgba(63,211,232,0.5);box-shadow:0 30px 80px -30px rgba(63,211,232,0.3)">
+          <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.22em;color:#8D96A3"><span>03 / PERCEPTION SYSTEMS</span><span style="color:#3FD3E8">↗</span></div>
+          <canvas ref="{{ visRef }}" aria-hidden="true" style="display:block;width:100%;height:190px;border-top:1px solid rgba(245,247,250,0.06);border-bottom:1px solid rgba(245,247,250,0.06)"></canvas>
+          <h3 style="margin:0;font-weight:500;font-size:34px;line-height:1;letter-spacing:-0.02em">COMPUTER<br>VISION</h3>
+          <p style="margin:0;font-size:15px;line-height:1.6;color:#8D96A3;text-wrap:pretty">Systems that allow machines to interpret and understand visual information from the world.</p>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- NEURAL LAB -->
+<section id="neural" data-screen-label="Neural Lab" style="position:relative;padding:clamp(110px,13vw,180px) clamp(20px,5vw,64px);background:#0B0D10;border-top:1px solid rgba(245,247,250,0.06);border-bottom:1px solid rgba(245,247,250,0.06);overflow:hidden">
+  <div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(50% 60% at 70% 50%,rgba(76,141,255,0.07),transparent 70%)"></div>
+  <div style="position:relative;max-width:1320px;margin:0 auto;display:flex;flex-wrap:wrap;gap:clamp(40px,5vw,72px);align-items:center">
+    <div style="flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:28px">
+      <div data-reveal="up" style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.24em;color:#8D96A3">NEURAL LAB / 02</div>
+      <h2 style="margin:0;font-weight:500;font-size:clamp(44px,6.4vw,96px);line-height:0.92;letter-spacing:-0.04em">
+        <span style="display:block;overflow:hidden;padding-bottom:0.04em"><span data-reveal="mask" style="display:block">INSIDE</span></span>
+        <span style="display:block;overflow:hidden;padding-bottom:0.04em"><span data-reveal="mask" data-delay="120" style="display:block">THE MACHINE</span></span>
+      </h2>
+      <p data-reveal="up" data-delay="200" style="margin:0;max-width:400px;font-size:17px;line-height:1.6;color:#AEB5BF;font-weight:300;text-wrap:pretty">Artificial intelligence begins with information, but intelligence emerges through layers of processing.</p>
+
+      <div data-reveal="up" data-delay="300" role="group" aria-label="Simulation controls" style="display:flex;flex-wrap:wrap;gap:8px">
+        <button onClick="{{ runSim }}" disabled="{{ runDisabled }}" style="min-height:46px;padding:0 16px;background:#F5F7FA;color:#050505;border:1px solid #F5F7FA;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;letter-spacing:0.16em;transition:all .3s;opacity:{{ runOp }}" style-hover="box-shadow:0 8px 30px rgba(76,141,255,0.35);transform:translateY(-1px)">[ RUN SIMULATION ]</button>
+        <button onClick="{{ pauseSim }}" disabled="{{ pauseDisabled }}" style="min-height:46px;padding:0 16px;background:transparent;color:#F5F7FA;border:1px solid rgba(245,247,250,0.25);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;transition:all .3s;opacity:{{ pauseOp }}" style-hover="border-color:rgba(245,247,250,0.7)">{{ pauseLabel }}</button>
+        <button onClick="{{ resetSim }}" style="min-height:46px;padding:0 16px;background:transparent;color:#F5F7FA;border:1px solid rgba(245,247,250,0.25);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;transition:all .3s" style-hover="border-color:rgba(245,247,250,0.7)">[ RESET ]</button>
+      </div>
+
+      <div data-reveal="up" data-delay="380" aria-live="polite" style="max-width:360px;border:1px solid rgba(245,247,250,0.1);background:rgba(5,5,5,0.5);backdrop-filter:blur(8px);padding:20px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;justify-content:space-between;color:#8D96A3;padding-bottom:12px;border-bottom:1px solid rgba(245,247,250,0.1)"><span>SYSTEM STATUS</span><span style="width:6px;height:6px;border-radius:50%;background:{{ simDot }};box-shadow:0 0 8px {{ simDot }};align-self:center"></span></div>
+        <sc-for list="{{ simRows }}" as="r" hint-placeholder-count="4">
+          <div style="display:flex;justify-content:space-between"><span style="color:#8D96A3">{{ r.k }}</span><span style="color:{{ r.c }}">{{ r.v }}</span></div>
+        </sc-for>
+      </div>
+    </div>
+    <div data-reveal="scale" data-delay="150" style="flex:1.7 1 480px;min-width:0;position:relative;border:1px solid rgba(245,247,250,0.08);background:rgba(5,5,5,0.4)">
+      <canvas ref="{{ nnRef }}" role="img" aria-label="Animated neural network with input, two hidden and output layers. Signals travel between nodes." style="display:block;width:100%;height:clamp(340px,46vw,560px)"></canvas>
+      <div aria-hidden="true" style="position:absolute;left:16px;bottom:14px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.2em;color:#5E6672">MOVE CURSOR TO EXCITE NODES</div>
+    </div>
+  </div>
+</section>
+
+<!-- PLAYGROUND -->
+<section id="playground" data-screen-label="Playground" style="position:relative;padding:clamp(110px,13vw,180px) clamp(20px,5vw,64px);background:linear-gradient(#08090B,#050505)">
+  <div style="max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:clamp(40px,5vw,64px)">
+    <div style="display:flex;flex-direction:column;gap:20px;align-items:center;text-align:center">
+      <div data-reveal="up" style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.24em;color:#8D96A3">PLAYGROUND / 03</div>
+      <h2 style="margin:0;font-weight:500;font-size:clamp(44px,6.4vw,96px);line-height:0.95;letter-spacing:-0.04em;overflow:hidden;padding-bottom:0.04em"><span data-reveal="mask" style="display:block">AI PLAYGROUND</span></h2>
+      <p data-reveal="up" data-delay="160" style="margin:0;font-size:17px;color:#AEB5BF;font-weight:300">Experiment with the interface of an intelligent system.</p>
+    </div>
+
+    <div data-reveal="scale" data-delay="200" style="border:1px solid rgba(245,247,250,0.12);background:linear-gradient(180deg,rgba(17,21,26,0.9),rgba(11,13,16,0.9));box-shadow:0 60px 120px -40px rgba(0,0,0,0.8),0 0 0 1px rgba(76,141,255,0.04);backdrop-filter:blur(12px)">
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;padding:16px 22px;border-bottom:1px solid rgba(245,247,250,0.08);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.2em;color:#8D96A3">
+        <span style="color:#F5F7FA">AI PLAYGROUND</span>
+        <div style="display:flex;flex-wrap:wrap;gap:20px">
+          <span>SYSTEM: <span style="color:#3FD3E8">ONLINE</span></span>
+          <span>MODEL: <span style="color:#F5F7FA">FUTURE-LAB</span></span>
+          <span>MODE: LOCAL SIMULATION</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap">
+        <div style="flex:1 1 360px;min-width:0;padding:28px;display:flex;flex-direction:column;gap:20px;border-right:1px solid rgba(245,247,250,0.08)">
+          <label for="pg-prompt" style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.22em;color:#8D96A3">PROMPT</label>
+          <textarea id="pg-prompt" value="{{ prompt }}" onChange="{{ setPrompt }}" onKeyDown="{{ promptKey }}" rows="5" placeholder="Ask the lab something…" style="width:100%;resize:vertical;min-height:140px;background:#07080A;border:1px solid rgba(245,247,250,0.14);color:#F5F7FA;font-family:'Space Grotesk',sans-serif;font-size:17px;line-height:1.55;padding:16px 18px;outline:none;transition:border-color .3s,box-shadow .3s" style-focus="border-color:#4C8DFF;box-shadow:0 0 0 3px rgba(76,141,255,0.18)"></textarea>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.22em;color:#5E6672">EXAMPLES</span>
+            <div style="display:flex;flex-wrap:wrap;gap:8px">
+              <sc-for list="{{ examples }}" as="ex" hint-placeholder-count="4">
+                <button onClick="{{ ex.onClick }}" disabled="{{ busy }}" style="min-height:40px;padding:0 14px;background:rgba(245,247,250,0.03);border:1px solid rgba(245,247,250,0.12);color:#C9CED6;font-family:'Space Grotesk',sans-serif;font-size:14px;transition:all .25s" style-hover="border-color:rgba(76,141,255,0.6);color:#F5F7FA;background:rgba(76,141,255,0.08)">{{ ex.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-top:4px">
+            <span data-magnetic="" style="display:inline-flex">
+              <button onClick="{{ runAI }}" disabled="{{ busy }}" style="min-height:52px;padding:0 26px;display:inline-flex;align-items:center;gap:12px;background:#F5F7FA;color:#050505;border:none;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;letter-spacing:0.2em;transition:all .3s" style-hover="gap:18px;box-shadow:0 10px 36px rgba(76,141,255,0.4)">{{ runLabel }}</button>
+            </span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.18em;color:#5E6672">⌘/CTRL + ENTER</span>
+          </div>
+        </div>
+        <div style="flex:1.2 1 400px;min-width:0;padding:28px;display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.22em;color:#8D96A3;padding-bottom:14px;border-bottom:1px solid rgba(245,247,250,0.1)">
+            <span>RESPONSE</span>
+            <span style="display:flex;align-items:center;gap:8px;color:{{ phaseColor }}"><span style="display:flex;gap:3px">
+              <span style="width:4px;height:4px;border-radius:50%;background:currentColor;animation:{{ dotAnim1 }}"></span>
+              <span style="width:4px;height:4px;border-radius:50%;background:currentColor;animation:{{ dotAnim2 }}"></span>
+              <span style="width:4px;height:4px;border-radius:50%;background:currentColor;animation:{{ dotAnim3 }}"></span>
+            </span>{{ phaseLabel }}</span>
+          </div>
+          <div aria-live="polite" style="flex:1;min-height:240px;font-size:18px;line-height:1.65;color:#E6E9EE;font-weight:300;text-wrap:pretty">
+            <sc-if value="{{ showIdle }}" hint-placeholder-val="{{ true }}"><span style="color:#5E6672">Awaiting prompt. Choose an example or write your own, then press RUN AI.</span></sc-if>
+            <sc-if value="{{ showProcessing }}" hint-placeholder-val="{{ false }}"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.16em;color:#8D96A3">TOKENIZING INPUT · ROUTING THROUGH 04 LAYERS…</span></sc-if>
+            <span>{{ resp }}</span><sc-if value="{{ showCaret }}" hint-placeholder-val="{{ false }}"><span style="display:inline-block;width:9px;height:1.1em;background:#3FD3E8;vertical-align:-0.18em;margin-left:2px;animation:blink 0.9s infinite"></span></sc-if>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:20px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.18em;color:#5E6672;padding-top:14px;border-top:1px solid rgba(245,247,250,0.06)">
+            <span>TOKENS {{ tokens }}</span><span>LATENCY {{ latency }}</span><span>RESPONSES ARE GENERATED LOCALLY</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VISION -->
+<section id="vision" data-screen-label="Vision" style="position:relative;padding:clamp(110px,13vw,180px) clamp(20px,5vw,64px);background:#050505">
+  <div style="max-width:1320px;margin:0 auto;display:flex;flex-direction:column;gap:clamp(40px,5vw,64px)">
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:32px">
+      <div style="display:flex;flex-direction:column;gap:24px">
+        <div data-reveal="up" style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.24em;color:#8D96A3">VISION ENGINE / 04</div>
+        <h2 style="margin:0;font-weight:500;font-size:clamp(40px,6vw,88px);line-height:0.95;letter-spacing:-0.035em">
+          <span style="display:block;overflow:hidden;padding-bottom:0.04em"><span data-reveal="mask" style="display:block">TEACHING MACHINES</span></span>
+          <span style="display:block;overflow:hidden;padding-bottom:0.04em"><span data-reveal="mask" data-delay="120" style="display:block;color:#8D96A3">TO SEE.</span></span>
+        </h2>
+      </div>
+      <p data-reveal="up" data-delay="200" style="margin:0;max-width:360px;font-size:17px;line-height:1.6;color:#AEB5BF;font-weight:300;text-wrap:pretty">A model scans a scene, proposes regions, and scores how confident it is about each one.</p>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:16px">
+      <div data-reveal="scale" style="flex:2.4 1 520px;min-width:0;position:relative;border:1px solid rgba(245,247,250,0.1);background:#07090C">
+        <canvas ref="{{ scanRef }}" role="img" aria-label="Abstract generated scene of a sphere, a cube and a pillar being scanned. Detection boxes appear with confidence scores." style="display:block;width:100%;aspect-ratio:16/10"></canvas>
+        <div aria-hidden="true" style="position:absolute;top:14px;left:16px;right:16px;display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.2em;color:#8D96A3"><span>VISION ENGINE · READY</span><span>FRAME 0412</span></div>
+        <div style="position:absolute;bottom:14px;left:16px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.22em;color:{{ scanColor }}">{{ scanStatus }}</div>
+      </div>
+      <div data-reveal="up" data-delay="160" style="flex:1 1 260px;min-width:0;border:1px solid rgba(245,247,250,0.1);background:#0B0D10;padding:24px;display:flex;flex-direction:column;gap:20px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.22em;color:#8D96A3;padding-bottom:14px;border-bottom:1px solid rgba(245,247,250,0.1)">DETECTIONS</div>
+        <ul aria-live="polite" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:16px">
+          <sc-for list="{{ detections }}" as="d" hint-placeholder-count="3">
+            <li style="display:flex;flex-direction:column;gap:8px;opacity:{{ d.op }};transition:opacity .4s">
+              <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em"><span>{{ d.label }}</span><span style="color:#3FD3E8">{{ d.conf }}</span></div>
+              <div style="height:2px;background:rgba(245,247,250,0.08)"><div style="height:100%;width:{{ d.w }};background:#3FD3E8;transition:width .9s cubic-bezier(.16,.84,.3,1)"></div></div>
+            </li>
+          </sc-for>
+        </ul>
+        <div style="margin-top:auto;display:flex;flex-direction:column;gap:14px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.18em;color:#5E6672;line-height:1.8">SCENE: GENERATED · OBJECTS: 03<br>INFERENCE: SIMULATED</div>
+          <button onClick="{{ rescan }}" style="min-height:46px;background:transparent;color:#F5F7FA;border:1px solid rgba(245,247,250,0.25);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.18em;transition:all .3s" style-hover="border-color:#3FD3E8;color:#3FD3E8">[ RESCAN ]</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GENERATIVE -->
+<section id="generative" data-screen-label="Generative" style="position:relative;padding:clamp(110px,13vw,180px) clamp(20px,5vw,64px);background:linear-gradient(#050505,#0B0D10);overflow:hidden">
+  <div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(45% 50% at 50% 70%,rgba(155,123,255,0.08),transparent 70%)"></div>
+  <div style="position:relative;max-width:1320px;margin:0 auto;display:flex;flex-direction:column;gap:clamp(48px,6vw,80px)">
+    <div style="display:flex;flex-direction:column;gap:24px">
+      <div data-reveal="up" style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.24em;color:#8D96A3">GENERATIVE / 05</div>
+      <h2 style="margin:0;font-weight:500;font-size:clamp(40px,6vw,88px);line-height:0.95;letter-spacing:-0.035em">
+        <span style="display:block;overflow:hidden;padding-bottom:0.04em"><span data-reveal="mask" style="display:block">FROM IDEA</span></span>
+        <span style="display:block;overflow:hidden;padding-bottom:0.04em"><span data-reveal="mask" data-delay="120" style="display:block;color:#8D96A3">TO CREATION.</span></span>
+      </h2>
+    </div>
+
+    <div data-reveal="fade" style="position:relative">
+      <canvas ref="{{ flowRef }}" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none"></canvas>
+      <ol style="position:relative;list-style:none;margin:0;padding:0;display:grid;grid-template-columns:{{ stageCols }};gap:{{ stageGap }}">
+        <sc-for list="{{ stages }}" as="st" hint-placeholder-count="4">
+          <li style="display:flex;flex-direction:column;gap:14px;padding-left:{{ stagePadL }}">
+            <span style="width:17px;height:17px;border-radius:50%;border:1px solid {{ st.c }};background:#0B0D10;box-shadow:0 0 16px {{ st.c }};display:flex;align-items:center;justify-content:center;margin-top:28px;margin-left:{{ stageDotML }}"><span style="width:5px;height:5px;border-radius:50%;background:{{ st.c }}"></span></span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.22em;color:#8D96A3;padding-top:12px">{{ st.n }}</span>
+            <span style="font-size:clamp(28px,3vw,40px);font-weight:500;letter-spacing:-0.02em;line-height:1">{{ st.t }}</span>
+            <span style="font-size:15px;line-height:1.55;color:#8D96A3;max-width:240px">{{ st.d }}</span>
+          </li>
+        </sc-for>
+      </ol>
+    </div>
+
+    <div data-reveal="up" style="display:flex;flex-wrap:wrap;border:1px solid rgba(245,247,250,0.1);background:rgba(5,5,5,0.55);backdrop-filter:blur(8px)">
+      <div style="flex:1 1 260px;min-width:0;padding:28px;display:flex;flex-direction:column;gap:16px;border-right:1px solid rgba(245,247,250,0.08)">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.22em;color:#8D96A3">INPUT</span>
+        <span style="font-size:24px;line-height:1.3;font-weight:400">“Create something futuristic.”</span>
+      </div>
+      <div style="flex:1 1 260px;min-width:0;padding:28px;display:flex;flex-direction:column;gap:16px;border-right:1px solid rgba(245,247,250,0.08)">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.22em;color:#8D96A3">PROCESSING</span>
+        <div style="height:10px;background:rgba(245,247,250,0.06);position:relative;overflow:hidden"><div ref="{{ progRef }}" style="position:absolute;left:0;top:0;bottom:0;width:0%;background:linear-gradient(90deg,#4C8DFF,#9B7BFF)"></div></div>
+        <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.18em"><span ref="{{ progLabelRef }}" style="color:#8D96A3">SAMPLING</span><span ref="{{ progTxtRef }}">0%</span></div>
+      </div>
+      <div style="flex:1.3 1 300px;min-width:0;padding:28px;display:flex;flex-direction:column;gap:16px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.22em;color:#8D96A3">GENERATED</span>
+        <canvas ref="{{ genOutRef }}" role="img" aria-label="Particles condensing into a new geometric concept" style="display:block;width:100%;height:180px"></canvas>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.2em">A NEW DIGITAL CONCEPT</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TIMELINE -->
+<section id="timeline" data-screen-label="Timeline" style="position:relative;padding:clamp(110px,13vw,180px) clamp(20px,5vw,64px);background:#0B0D10;overflow:hidden">
+  <div style="max-width:1320px;margin:0 auto;display:flex;flex-direction:column;gap:clamp(56px,7vw,96px)">
+    <div style="display:flex;flex-direction:column;gap:24px">
+      <div data-reveal="up" style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.24em;color:#8D96A3">TIMELINE / 06</div>
+      <h2 style="margin:0;font-weight:500;font-size:clamp(40px,6vw,88px);line-height:0.95;letter-spacing:-0.035em">
+        <span style="display:block;overflow:hidden;padding-bottom:0.04em"><span data-reveal="mask" style="display:block">FROM DREAM</span></span>
+        <span style="display:block;overflow:hidden;padding-bottom:0.04em"><span data-reveal="mask" data-delay="120" style="display:block;color:#8D96A3">TO MACHINE</span></span>
+      </h2>
+    </div>
+    <ol style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));row-gap:48px">
+      <li style="display:flex;flex-direction:column;gap:18px;padding-right:20px">
+        <div style="position:relative;height:14px;display:flex;align-items:center"><span data-reveal="line" data-delay="0" style="position:absolute;left:0;right:-20px;height:1px;background:linear-gradient(90deg,#4C8DFF,rgba(76,141,255,0.5))"></span><span data-reveal="scale" data-delay="0" style="position:relative;width:12px;height:12px;border-radius:50%;background:#F5F7FA;box-shadow:0 0 0 4px rgba(76,141,255,0.15),0 0 14px #4C8DFF"></span></div>
+        <div data-reveal="up" data-delay="80" style="display:flex;flex-direction:column;gap:10px"><span style="font-size:44px;font-weight:500;letter-spacing:-0.03em;line-height:1">1950</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.2em;color:#4C8DFF">EARLY AI</span><span style="font-size:15px;line-height:1.55;color:#8D96A3">The question is asked: can machines think?</span></div>
+      </li>
+      <li style="display:flex;flex-direction:column;gap:18px;padding-right:20px">
+        <div style="position:relative;height:14px;display:flex;align-items:center"><span data-reveal="line" data-delay="160" style="position:absolute;left:0;right:-20px;height:1px;background:rgba(76,141,255,0.5)"></span><span data-reveal="scale" data-delay="160" style="position:relative;width:12px;height:12px;border-radius:50%;background:#F5F7FA;box-shadow:0 0 0 4px rgba(76,141,255,0.15),0 0 14px #4C8DFF"></span></div>
+        <div data-reveal="up" data-delay="240" style="display:flex;flex-direction:column;gap:10px"><span style="font-size:44px;font-weight:500;letter-spacing:-0.03em;line-height:1">1960s</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.2em;color:#4C8DFF">EXPERT SYSTEMS</span><span style="font-size:15px;line-height:1.55;color:#8D96A3">Human knowledge written as rules.</span></div>
+      </li>
+      <li style="display:flex;flex-direction:column;gap:18px;padding-right:20px">
+        <div style="position:relative;height:14px;display:flex;align-items:center"><span data-reveal="line" data-delay="320" style="position:absolute;left:0;right:-20px;height:1px;background:rgba(155,123,255,0.55)"></span><span data-reveal="scale" data-delay="320" style="position:relative;width:12px;height:12px;border-radius:50%;background:#F5F7FA;box-shadow:0 0 0 4px rgba(155,123,255,0.15),0 0 14px #9B7BFF"></span></div>
+        <div data-reveal="up" data-delay="400" style="display:flex;flex-direction:column;gap:10px"><span style="font-size:44px;font-weight:500;letter-spacing:-0.03em;line-height:1">1990s</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.2em;color:#9B7BFF">MACHINE LEARNING</span><span style="font-size:15px;line-height:1.55;color:#8D96A3">Systems start learning from data.</span></div>
+      </li>
+      <li style="display:flex;flex-direction:column;gap:18px;padding-right:20px">
+        <div style="position:relative;height:14px;display:flex;align-items:center"><span data-reveal="line" data-delay="480" style="position:absolute;left:0;right:-20px;height:1px;background:rgba(155,123,255,0.55)"></span><span data-reveal="scale" data-delay="480" style="position:relative;width:12px;height:12px;border-radius:50%;background:#F5F7FA;box-shadow:0 0 0 4px rgba(155,123,255,0.15),0 0 14px #9B7BFF"></span></div>
+        <div data-reveal="up" data-delay="560" style="display:flex;flex-direction:column;gap:10px"><span style="font-size:44px;font-weight:500;letter-spacing:-0.03em;line-height:1">2010s</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.2em;color:#9B7BFF">DEEP LEARNING</span><span style="font-size:15px;line-height:1.55;color:#8D96A3">Layered networks scale with compute.</span></div>
+      </li>
+      <li style="display:flex;flex-direction:column;gap:18px;padding-right:20px">
+        <div style="position:relative;height:14px;display:flex;align-items:center"><span data-reveal="line" data-delay="640" style="position:absolute;left:0;right:-20px;height:1px;background:linear-gradient(90deg,rgba(63,211,232,0.7),rgba(63,211,232,0.25))"></span><span data-reveal="scale" data-delay="640" style="position:relative;width:12px;height:12px;border-radius:50%;background:#3FD3E8;box-shadow:0 0 0 5px rgba(63,211,232,0.18),0 0 22px #3FD3E8"></span></div>
+        <div data-reveal="up" data-delay="720" style="display:flex;flex-direction:column;gap:10px"><span style="font-size:44px;font-weight:500;letter-spacing:-0.03em;line-height:1">2020s</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.2em;color:#3FD3E8">GENERATIVE AI</span><span style="font-size:15px;line-height:1.55;color:#8D96A3">Models create text, images and code.</span></div>
+      </li>
+      <li style="display:flex;flex-direction:column;gap:18px">
+        <div style="position:relative;height:14px;display:flex;align-items:center"><span data-reveal="line" data-delay="800" style="position:absolute;left:0;right:-40px;height:1px;background-image:linear-gradient(90deg,rgba(245,247,250,0.4) 50%,transparent 50%);background-size:8px 1px;-webkit-mask-image:linear-gradient(90deg,#000,transparent);mask-image:linear-gradient(90deg,#000,transparent)"></span><span data-reveal="scale" data-delay="800" style="position:relative;width:12px;height:12px;border-radius:50%;border:1px dashed rgba(245,247,250,0.6);animation:pulse 2.6s ease-in-out infinite"></span></div>
+        <div data-reveal="up" data-delay="880" style="display:flex;flex-direction:column;gap:10px;-webkit-mask-image:linear-gradient(90deg,#000 30%,rgba(0,0,0,0.35));mask-image:linear-gradient(90deg,#000 30%,rgba(0,0,0,0.35))"><span style="font-size:44px;font-weight:300;letter-spacing:-0.03em;line-height:1;color:#AEB5BF">NEXT</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.2em;color:#8D96A3">UNKNOWN<span style="animation:blink 1s infinite">_</span></span><span style="font-size:15px;line-height:1.55;color:#8D96A3">Still being written.</span></div>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- FUTURE -->
+<section id="future" data-screen-label="The Future" style="position:relative;min-height:110vh;display:flex;align-items:center;justify-content:center;padding:clamp(120px,14vw,200px) clamp(20px,5vw,64px);background:#050505;overflow:hidden;text-align:center">
+  <canvas ref="{{ futureRef }}" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;display:block"></canvas>
+  <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:clamp(40px,5vw,64px);max-width:1100px">
+    <div data-reveal="up" style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.24em;color:#8D96A3">THE FUTURE / 07</div>
+    <h2 style="margin:0;font-weight:500;font-size:clamp(46px,8.4vw,136px);line-height:0.92;letter-spacing:-0.045em">
+      <span style="display:block;overflow:hidden;padding-bottom:0.04em"><span data-reveal="mask" style="display:block">THE FUTURE</span></span>
+      <span style="display:block;overflow:hidden;padding-bottom:0.04em"><span data-reveal="mask" data-delay="120" style="display:block">IS NOT</span></span>
+      <span style="display:block;overflow:hidden;padding-bottom:0.04em"><span data-reveal="mask" data-delay="240" style="display:block;color:#8D96A3">PREWRITTEN.</span></span>
+    </h2>
+    <p data-reveal="up" data-delay="200" style="margin:0;max-width:520px;font-size:18px;line-height:1.65;color:#AEB5BF;font-weight:300;text-wrap:pretty">Artificial intelligence is no longer a distant idea. It is becoming part of how we create, learn, solve problems and imagine what comes next.</p>
+    <div data-reveal="scale" data-delay="200" style="font-size:clamp(28px,3.6vw,52px);font-weight:400;letter-spacing:0.14em;line-height:1.15">WE ARE<br><span style="color:#3FD3E8;text-shadow:0 0 30px rgba(63,211,232,0.35)">BUILDING IT.</span></div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section data-screen-label="CTA" style="position:relative;padding:clamp(110px,12vw,170px) clamp(20px,5vw,64px);background:#050505;border-top:1px solid rgba(245,247,250,0.06)">
+  <div style="max-width:1320px;margin:0 auto;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:48px">
+    <h2 style="margin:0;font-weight:500;font-size:clamp(44px,7vw,112px);line-height:0.92;letter-spacing:-0.04em">
+      <span style="display:block;overflow:hidden;padding-bottom:0.04em"><span data-reveal="mask" style="display:block">READY TO</span></span>
+      <span style="display:block;overflow:hidden;padding-bottom:0.04em"><span data-reveal="mask" data-delay="120" style="display:block">ENTER THE LAB?</span></span>
+    </h2>
+    <div data-reveal="up" data-delay="240" style="display:flex;flex-direction:column;gap:20px;align-items:flex-start">
+      <span data-magnetic="" style="display:inline-flex">
+        <a href="#playground" style="display:inline-flex;align-items:center;gap:16px;min-height:64px;padding:0 34px;background:#F5F7FA;color:#050505;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:500;letter-spacing:0.2em;transition:all .35s cubic-bezier(.16,.84,.3,1)" style-hover="gap:26px;box-shadow:0 14px 50px rgba(76,141,255,0.4);transform:translateY(-2px);color:#050505" style-active="transform:scale(.98)">ENTER THE LAB <span>→</span></a>
+      </span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.22em;color:#8D96A3">EXPLORE. EXPERIMENT. IMAGINE.</span>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer style="padding:64px clamp(20px,5vw,64px) 36px;background:#050505;border-top:1px solid rgba(245,247,250,0.08)">
+  <div style="max-width:1320px;margin:0 auto;display:flex;flex-direction:column;gap:56px">
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:40px">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <span style="display:flex;align-items:center;gap:12px;font-weight:500;font-size:15px;letter-spacing:0.3em"><span style="width:9px;height:9px;border:1px solid #F5F7FA;transform:rotate(45deg)"></span>AI FUTURE LAB</span>
+        <span style="font-size:15px;color:#8D96A3">Explore the intelligence shaping tomorrow.</span>
+      </div>
+      <nav aria-label="Footer">
+        <ul style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,auto);gap:12px 48px">
+          <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="5">
+            <li><a href="{{ n.href }}" style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#AEB5BF;display:inline-block;padding:6px 0">{{ n.label }}</a></li>
+          </sc-for>
+        </ul>
+      </nav>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;padding-top:24px;border-top:1px solid rgba(245,247,250,0.06);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.2em;color:#5E6672">
+      <span>© 2026 AI FUTURE LAB</span>
+      <div style="display:flex;flex-wrap:wrap;gap:24px"><span>SYSTEM STATUS: <span style="color:#3FD3E8">ONLINE</span></span><span>VERSION: 01.0</span><span>ALL SYSTEMS SIMULATED</span></div>
+    </div>
+  </div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const BLUE=[76,141,255],VIOLET=[155,123,255],CYAN=[63,211,232];
+const rgba=(c,a)=>`rgba(${c[0]},${c[1]},${c[2]},${a})`;
+const lerp=(a,b,k)=>a+(b-a)*k;
+const mixC=(a,b,k)=>[lerp(a[0],b[0],k),lerp(a[1],b[1],k),lerp(a[2],b[2],k)].map(Math.round);
+const OBJS=[
+  {label:'PILLAR',c:88.6,x:.74,y:.18,w:.1,h:.54,type:'pillar'},
+  {label:'SPHERE',c:97.4,x:.14,y:.36,w:.22,h:.36,type:'sphere'},
+  {label:'CUBE',c:92.1,x:.45,y:.44,w:.19,h:.3,type:'cube'}
+];
+const PROMPTS={
+  'Explain AI':'Explain artificial intelligence in simple terms.',
+  'What is machine learning?':'What is machine learning?',
+  'How do neural networks work?':'How do neural networks work?',
+  'What is generative AI?':'What is generative AI?'
+};
+const ANSWERS={
+  ai:'Artificial intelligence is the craft of building systems that do things we associate with thinking — recognising patterns, understanding language, making decisions. Most modern AI is not programmed rule by rule. It learns those abilities from large amounts of examples, then applies what it learned to situations it has never seen.',
+  ml:'Machine learning is how most AI gets its abilities. Instead of writing instructions, you show a system thousands of examples and let it adjust itself until its predictions improve. A spam filter, a music recommendation, a photo search — each is a model that learned a pattern from data, and keeps refining it with experience.',
+  nn:'A neural network is a stack of simple units arranged in layers. Each unit takes in numbers, weighs them, and passes a signal forward. Early layers notice basic features; deeper layers combine them into concepts. Training nudges millions of those weights until the final layer gives the right answer more often.',
+  gen:'Generative AI creates new content rather than just classifying it. Trained on huge collections of text, images, sound or code, these models learn the structure of that material well enough to produce original examples of it — a paragraph, an illustration, a melody — guided by the prompt you give.'
+};
+class Component extends DCLogic {
+  state={step:0,loading:true,loaderGone:false,scrolled:false,active:'',mobile:false,fine:false,menu:false,
+    prompt:'Explain artificial intelligence in simple terms.',resp:'',busy:false,phase:'idle',latency:null,
+    sim:'idle',scanDone:false,detN:0};
+  R={};
+  ref(k){return this.R[k]||(this.R[k]=React.createRef());}
+
+  componentDidMount(){
+    const w=window;
+    this.reduced=w.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.fine=w.matchMedia('(pointer: fine)').matches&&!('ontouchstart' in w&&navigator.maxTouchPoints>0&&!w.matchMedia('(hover: hover)').matches);
+    this.mouse={x:-9999,y:-9999};this.hover={};
+    this.isMob=w.innerWidth<820;
+    this.setState({mobile:this.isMob,fine:this.fine});
+    this.setState({navMob:w.innerWidth<1080});
+    this.onResize=()=>{const m=w.innerWidth<820,nm=w.innerWidth<1080;this.isMob=m;if(m!==this.state.mobile||nm!==this.state.navMob)this.setState({mobile:m,navMob:nm,menu:nm?this.state.menu:false});};
+    this.onScroll=()=>{const s=w.scrollY>40;if(s!==this.state.scrolled)this.setState({scrolled:s});};
+    this.onMove=e=>{this.mouse.x=e.clientX;this.mouse.y=e.clientY;this.magnet(e);};
+    this.onOut=e=>{if(!e.relatedTarget){this.mouse.x=-9999;this.mouse.y=-9999;}};
+    this.onOver=e=>{this.cHover=!!(e.target.closest&&e.target.closest('a,button,textarea,[data-cursor]'));};
+    w.addEventListener('resize',this.onResize);
+    w.addEventListener('scroll',this.onScroll,{passive:true});
+    w.addEventListener('mousemove',this.onMove,{passive:true});
+    document.addEventListener('mouseout',this.onOut);
+    document.addEventListener('mouseover',this.onOver);
+    this.onScroll();
+    if(this.fine)document.documentElement.classList.add('cc');
+    const ms=this.reduced?90:260;this.timers=[];
+    for(let i=1;i<=5;i++)this.timers.push(setTimeout(()=>this.setState({step:i}),ms*i));
+    this.timers.push(setTimeout(this.finishLoad,ms*5+(this.reduced?150:420)));
+    this.setupReveal();this.setupNav();this.setupScenes();
+    this.ringP={x:-100,y:-100};this.ringS=1;
+    this.raf=requestAnimationFrame(this.loop);
+  }
+  componentWillUnmount(){
+    const w=window;cancelAnimationFrame(this.raf);(this.timers||[]).forEach(clearTimeout);clearInterval(this.typeT);
+    w.removeEventListener('resize',this.onResize);w.removeEventListener('scroll',this.onScroll);w.removeEventListener('mousemove',this.onMove);
+    document.removeEventListener('mouseout',this.onOut);document.removeEventListener('mouseover',this.onOver);
+    document.documentElement.classList.remove('cc');
+    [this.io,this.nio,this.vio].forEach(o=>o&&o.disconnect());
+  }
+  finishLoad=()=>{
+    if(this.ready)return;this.ready=true;(this.timers||[]).forEach(clearTimeout);
+    this.setState({loading:false,step:5});this.heroStart=performance.now();
+    this.pending.forEach(el=>this.reveal(el));this.pending=[];
+    setTimeout(()=>this.setState({loaderGone:true}),800);
+  };
+
+  // ---------- reveals ----------
+  setupReveal(){
+    const root=this.ref('root').current;if(!root)return;
+    this.pending=[];const E='cubic-bezier(.16,.84,.3,1)';
+    const from={up:'translateY(28px)',mask:'translateY(105%)',scale:'scale(.965)',line:'scaleX(0)',fade:'none'};
+    this.io=new IntersectionObserver(es=>es.forEach(e=>{
+      if(!e.isIntersecting)return;this.io.unobserve(e.target);const el=e.target.__rv||e.target;
+      this.ready?this.reveal(el):this.pending.push(el);
+    }),{threshold:0.12,rootMargin:'0px 0px -6% 0px'});
+    root.querySelectorAll('[data-reveal]').forEach(el=>{
+      const t=el.dataset.reveal,d=+(el.dataset.delay||0);
+      el.style.transition=`opacity ${this.reduced?400:850}ms ${E} ${d}ms, transform ${this.reduced?0:1000}ms ${E} ${d}ms`;
+      el.style.opacity='0';
+      if(!this.reduced)el.style.transform=from[t]||'none';
+      if(t==='line')el.style.transformOrigin='left center';
+      let target=el;if(t==='mask'){target=el.parentElement;target.__rv=el;}
+      this.io.observe(target);
+    });
+  }
+  reveal(el){el.style.opacity='1';el.style.transform='none';}
+  setupNav(){
+    this.nio=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting&&this.state.active!==e.target.id)this.setState({active:e.target.id});}),{rootMargin:'-45% 0px -50% 0px'});
+    ['top','intelligence','neural','playground','vision','generative','timeline','future'].forEach(id=>{const s=document.getElementById(id);s&&this.nio.observe(s);});
+  }
+
+  // ---------- canvas scenes ----------
+  setupScenes(){
+    this.scenes=[];
+    const add=(k,init,draw)=>{const cv=this.ref(k).current;if(!cv)return;const s={cv,ctx:cv.getContext('2d'),w:0,h:0,vis:false,draw,d:{}};init&&init.call(this,s);this.scenes.push(s);};
+    add('hero',this.initHero,this.drawHero);
+    add('ml',this.initML,this.drawML);
+    add('gen',this.initGen,this.drawGen);
+    add('vis',null,this.drawVisCard);
+    add('nn',this.initNN,this.drawNN);
+    add('scan',this.initScan,this.drawScan);
+    add('flow',this.initFlow,this.drawFlow);
+    add('genOut',this.initGenOut,this.drawGenOut);
+    add('future',this.initFuture,this.drawFuture);
+    this.vio=new IntersectionObserver(es=>es.forEach(e=>{const s=this.scenes.find(x=>x.cv===e.target);if(s)s.vis=e.isIntersecting;}),{rootMargin:'120px'});
+    this.scenes.forEach(s=>this.vio.observe(s.cv));
+  }
+  fit(s){
+    const dpr=Math.min(window.devicePixelRatio||1,2),w=s.cv.clientWidth,h=s.cv.clientHeight;
+    if(w!==s.w||h!==s.h){s.w=w;s.h=h;s.cv.width=Math.round(w*dpr);s.cv.height=Math.round(h*dpr);s.ctx.setTransform(dpr,0,0,dpr,0,0);s.resized=true;}
+  }
+  local(s){const r=s.cv.getBoundingClientRect();return{x:this.mouse.x-r.left,y:this.mouse.y-r.top};}
+  loop=(now)=>{
+    this.raf=requestAnimationFrame(this.loop);
+    const dt=Math.min(0.05,(now-(this.last||now))/1000);this.last=now;
+    const sp=this.reduced?0.25:1;this.T=(this.T||0)+dt*sp;
+    for(const s of this.scenes){if(!s.vis)continue;this.fit(s);if(!s.w||!s.h)continue;s.draw.call(this,s,this.T,dt*sp);s.resized=false;}
+    this.cursorTick();
+  };
+
+  initHero(s){
+    const N=this.isMob?150:300,d=s.d;d.nodes=[];d.edges=[];d.ox=0;d.oy=0;
+    const ga=Math.PI*(3-Math.sqrt(5));
+    for(let i=0;i<N;i++){const y=1-(i/(N-1))*2,r=Math.sqrt(1-y*y),th=ga*i;
+      const j=1+(Math.random()-.5)*0.08;
+      d.nodes.push({x:Math.cos(th)*r*j,y:y*j,z:Math.sin(th)*r*j,ph:Math.random()*6.28,acc:i%19===0,inf:0});}
+    const thr=this.isMob?0.36:0.27;
+    for(let i=0;i<N;i++)for(let k=i+1;k<N;k++){const a=d.nodes[i],b=d.nodes[k];const dd=Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z);if(dd<thr&&Math.random()<0.7)d.edges.push([i,k]);}
+    d.orb=Array.from({length:this.isMob?40:80},()=>({a:Math.random()*6.28,r:1.15+Math.random()*0.5,t:(Math.random()-.5)*0.9,sp:(0.15+Math.random()*0.3)*(Math.random()<.5?-1:1),s:Math.random()*1.2+0.4}));
+    d.bg=Array.from({length:this.isMob?40:90},()=>({x:Math.random(),y:Math.random(),vx:(Math.random()-.5)*0.006,vy:(Math.random()-.5)*0.006,a:Math.random()*0.35+0.05,s:Math.random()*1.3+0.3}));
+    d.sig=[];
+  }
+  drawHero(s,t,dt){
+    const {ctx,w,h,d}=s;ctx.clearRect(0,0,w,h);const mob=w<820;
+    for(const p of d.bg){p.x=(p.x+p.vx*dt+1)%1;p.y=(p.y+p.vy*dt+1)%1;ctx.fillStyle=`rgba(245,247,250,${p.a})`;ctx.fillRect(p.x*w,p.y*h,p.s,p.s);}
+    const el=this.heroStart?Math.min(1,(performance.now()-this.heroStart)/1600):0;const e=1-Math.pow(1-el,3);
+    if(e<=0)return;
+    const m=this.local(s),inside=m.x>=0&&m.x<=w&&m.y>=0&&m.y<=h;
+    const nx=inside?m.x/w-.5:0,ny=inside?m.y/h-.5:0;
+    d.ox+=(nx*40-d.ox)*0.04;d.oy+=(ny*30-d.oy)*0.04;
+    const cx=(mob?w*.5:w*.68)+d.ox,cy=(mob?h*.3:h*.5)+d.oy;
+    const R=Math.min(w*(mob?.4:.27),h*(mob?.24:.36))*(0.82+0.18*e)*(1+0.014*Math.sin(t*1.4));
+    const ry=t*0.13+d.ox*0.008,rx=-0.32+d.oy*0.008,cyR=Math.cos(ry),syR=Math.sin(ry),cxR=Math.cos(rx),sxR=Math.sin(rx);
+    const g=ctx.createRadialGradient(cx,cy,0,cx,cy,R*1.6);g.addColorStop(0,rgba(BLUE,0.16*e));g.addColorStop(0.5,rgba(VIOLET,0.04*e));g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=g;ctx.fillRect(cx-R*1.6,cy-R*1.6,R*3.2,R*3.2);
+    ctx.lineWidth=1;
+    for(let i=0;i<2;i++){ctx.strokeStyle=`rgba(245,247,250,${0.07*e})`;ctx.beginPath();ctx.ellipse(cx,cy,R*(1.3+i*0.22),R*(1.3+i*0.22)*0.2,-0.18+i*0.1,0,Math.PI*2);ctx.stroke();}
+    for(const n of d.nodes){
+      const x1=n.x*cyR+n.z*syR,z1=-n.x*syR+n.z*cyR,y1=n.y*cxR-z1*sxR,z2=n.y*sxR+z1*cxR;
+      const p=2.8/(2.8-z2);let sx=cx+x1*R*p,sy=cy+y1*R*p;
+      const dd=Math.hypot(sx-m.x,sy-m.y);const inf=inside?Math.max(0,1-dd/150):0;n.inf+=(inf-n.inf)*0.15;
+      if(n.inf>0.01&&dd>0.1){sx+=(sx-m.x)/dd*n.inf*12;sy+=(sy-m.y)/dd*n.inf*12;}
+      n.sx=sx;n.sy=sy;n.dz=(z2+1)/2;
+    }
+    ctx.lineWidth=0.6;
+    for(const [a,b] of d.edges){const A=d.nodes[a],B=d.nodes[b];const al=(0.02+((A.dz+B.dz)/2)**2*0.2+Math.max(A.inf,B.inf)*0.5)*e;
+      if(al<0.015)continue;ctx.strokeStyle=`rgba(150,185,255,${al})`;ctx.beginPath();ctx.moveTo(A.sx,A.sy);ctx.lineTo(B.sx,B.sy);ctx.stroke();}
+    if(d.sig.length<(mob?8:16)&&Math.random()<0.25)d.sig.push({e:(Math.random()*d.edges.length)|0,p:0,sp:0.6+Math.random()*0.9});
+    for(let i=d.sig.length-1;i>=0;i--){const q=d.sig[i];q.p+=dt*q.sp;if(q.p>=1){d.sig.splice(i,1);continue;}
+      const [a,b]=d.edges[q.e]||[0,0];const A=d.nodes[a],B=d.nodes[b];const x=lerp(A.sx,B.sx,q.p),y=lerp(A.sy,B.sy,q.p),dz=(A.dz+B.dz)/2;
+      ctx.fillStyle=rgba(CYAN,0.15*e*dz);ctx.beginPath();ctx.arc(x,y,5,0,6.28);ctx.fill();
+      ctx.fillStyle=rgba(CYAN,0.9*e*dz);ctx.beginPath();ctx.arc(x,y,1.4,0,6.28);ctx.fill();}
+    for(const n of d.nodes){const tw=0.75+0.25*Math.sin(t*2+n.ph);const r=0.5+n.dz*1.5+n.inf*2;const a=(0.12+n.dz*0.85)*tw*e;
+      ctx.fillStyle=n.acc?rgba(n.inf>0.2?CYAN:BLUE,a):`rgba(245,247,250,${Math.min(1,a+n.inf*.4)})`;ctx.beginPath();ctx.arc(n.sx,n.sy,r,0,6.28);ctx.fill();}
+    for(const o of d.orb){o.a+=o.sp*dt;const x=Math.cos(o.a)*o.r,z=Math.sin(o.a)*o.r,y=z*o.t;const dz=(z/o.r+1)/2;
+      ctx.fillStyle=`rgba(200,225,255,${(0.1+dz*0.6)*e})`;ctx.fillRect(cx+x*R-o.s/2,cy+(y*cxR)*R-o.s/2,o.s,o.s);}
+  }
+
+  initML(s){s.d.ps=Array.from({length:42},()=>({p:Math.random(),y0:Math.random(),lane:(Math.random()*3)|0,sp:0.12+Math.random()*0.12}));}
+  drawML(s,t,dt){
+    const {ctx,w,h,d}=s;ctx.clearRect(0,0,w,h);const hv=this.hover.ml?2.8:1;d.t=(d.t||0)+dt*hv;
+    const cx=w*.5,cy=h*.5;
+    ctx.strokeStyle='rgba(245,247,250,0.04)';ctx.lineWidth=1;
+    for(let x=0;x<w;x+=24){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}
+    const lanes=[h*.24,h*.5,h*.76],cols=[BLUE,CYAN,VIOLET];
+    lanes.forEach((y,i)=>{ctx.strokeStyle=rgba(cols[i],0.18);ctx.beginPath();ctx.moveTo(cx+40,y);ctx.lineTo(w,y);ctx.stroke();});
+    for(const p of d.ps){p.p+=dt*p.sp*hv;if(p.p>1){p.p=0;p.y0=Math.random();p.lane=(Math.random()*3)|0;}
+      let x,y,c,a;
+      if(p.p<.5){const k=p.p/.5,ek=k*k;x=lerp(0,cx,ek);y=lerp(p.y0*h,cy,ek);c=[245,247,250];a=0.25+k*0.6;}
+      else{const k=(p.p-.5)/.5,ek=1-Math.pow(1-Math.min(1,k*1.6),3);x=lerp(cx,w,k);y=lerp(cy,lanes[p.lane],ek);c=cols[p.lane];a=0.9-k*0.4;}
+      ctx.fillStyle=rgba(c,a);ctx.beginPath();ctx.arc(x,y,1.8,0,6.28);ctx.fill();}
+    for(let i=0;i<3;i++){ctx.strokeStyle=rgba(BLUE,0.5-i*0.13);ctx.lineWidth=1;ctx.beginPath();const st=d.t*(0.8+i*0.5)*(i%2?-1:1);ctx.arc(cx,cy,16+i*10,st,st+Math.PI*1.3);ctx.stroke();}
+    ctx.fillStyle='#0B0D10';ctx.beginPath();ctx.arc(cx,cy,10,0,6.28);ctx.fill();
+    ctx.fillStyle=rgba(BLUE,0.9);ctx.beginPath();ctx.arc(cx,cy,3+Math.sin(d.t*3)*1,0,6.28);ctx.fill();
+    ctx.font='9px "JetBrains Mono", monospace';ctx.fillStyle='rgba(141,150,163,0.9)';ctx.fillText('DATA',6,14);ctx.fillText('MODEL',cx-14,cy+52);ctx.textAlign='right';ctx.fillText('PREDICTIONS',w-6,14);ctx.textAlign='left';
+  }
+
+  initGen(s){const N=96;s.d.N=N;s.d.ps=Array.from({length:N},()=>({x:Math.random(),y:Math.random()}));s.d.shape=0;s.d.tc=0;s.d.shapes=this.genShapes(N);}
+  genShapes(N){
+    const grid=[],circ=[],tri=[],wave=[];
+    for(let i=0;i<N;i++){
+      grid.push([(i%12)/11-.5,(Math.floor(i/12)/7-.5)*0.6]);
+      const a=i/N*Math.PI*2,rr=i%2?0.42:0.26;circ.push([Math.cos(a)*rr*0.6,Math.sin(a)*rr]);
+      const k=i/N*3,side=Math.floor(k),f=k-side,V=[[0,-.42],[.4,.32],[-.4,.32]];const A=V[side],B=V[(side+1)%3];tri.push([lerp(A[0],B[0],f)*0.75,lerp(A[1],B[1],f)]);
+      wave.push([i/N-.5,Math.sin(i/N*Math.PI*4)*0.26*(i%2?1:-1)]);
+    }
+    return[grid,circ,tri,wave];
+  }
+  drawGen(s,t,dt){
+    const {ctx,w,h,d}=s;ctx.clearRect(0,0,w,h);const hv=this.hover.gen?2.4:1;
+    d.tc+=dt*hv;if(d.tc>2.6){d.tc=0;d.shape=(d.shape+1)%4;}
+    const tg=d.shapes[d.shape],sc=Math.min(w*1.1,h*1.7)*0.62,cx=w/2,cy=h/2,k=1-Math.exp(-dt*3*hv);
+    ctx.strokeStyle=rgba(VIOLET,0.12);ctx.lineWidth=0.7;ctx.beginPath();
+    d.ps.forEach((p,i)=>{const T=tg[i];const jx=Math.sin(t*2+i)*0.004,jy=Math.cos(t*1.7+i)*0.004;p.x=lerp(p.x,T[0]+jx,k);p.y=lerp(p.y,T[1]+jy,k);const X=cx+p.x*sc,Y=cy+p.y*sc;i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);});
+    ctx.stroke();
+    d.ps.forEach((p,i)=>{const c=i%5===0?CYAN:VIOLET;ctx.fillStyle=rgba(c,0.85);ctx.beginPath();ctx.arc(cx+p.x*sc,cy+p.y*sc,i%7===0?2.2:1.4,0,6.28);ctx.fill();});
+    ctx.font='9px "JetBrains Mono", monospace';ctx.fillStyle='rgba(141,150,163,0.9)';ctx.fillText(['TOKENS','IMAGE','FORM','SIGNAL'][d.shape]+' → '+['IMAGE','FORM','SIGNAL','TOKENS'][d.shape],6,14);
+  }
+
+  drawVisCard(s,t,dt){
+    const {ctx,w,h,d}=s;ctx.clearRect(0,0,w,h);const hv=this.hover.vis?2.2:1;d.t=(d.t||0)+dt*hv;
+    ctx.strokeStyle='rgba(245,247,250,0.05)';for(let y=0;y<h;y+=20){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
+    const objs=[{x:w*.28,y:h*.55,r:Math.min(h*.24,w*.13),t:'c',l:'OBJ_01',c:'0.97'},{x:w*.68,y:h*.46,r:Math.min(h*.2,w*.11),t:'r',l:'OBJ_02',c:'0.91'}];
+    const cyc=(d.t*0.35)%1.25,sy=cyc*h;
+    for(const o of objs){ctx.strokeStyle='rgba(245,247,250,0.35)';ctx.lineWidth=1;ctx.beginPath();
+      if(o.t==='c')ctx.arc(o.x,o.y,o.r,0,6.28);else ctx.rect(o.x-o.r,o.y-o.r,o.r*2,o.r*2);ctx.stroke();
+      if(sy>o.y){const b=o.r+8,x0=o.x-b,y0=o.y-b,L=10;ctx.strokeStyle=rgba(CYAN,0.95);ctx.lineWidth=1.4;ctx.beginPath();
+        [[x0,y0,1,1],[x0+2*b,y0,-1,1],[x0,y0+2*b,1,-1],[x0+2*b,y0+2*b,-1,-1]].forEach(([x,y,a,c])=>{ctx.moveTo(x+a*L,y);ctx.lineTo(x,y);ctx.lineTo(x,y+c*L);});ctx.stroke();
+        ctx.font='9px "JetBrains Mono", monospace';ctx.fillStyle=rgba(CYAN,0.95);ctx.fillText(o.l+' '+o.c,x0,y0-6);}}
+    if(cyc<1){const g=ctx.createLinearGradient(0,sy-40,0,sy);g.addColorStop(0,rgba(CYAN,0));g.addColorStop(1,rgba(CYAN,0.16));ctx.fillStyle=g;ctx.fillRect(0,sy-40,w,40);ctx.fillStyle=rgba(CYAN,0.9);ctx.fillRect(0,sy,w,1);}
+  }
+
+  initNN(s){
+    const L=this.isMob?[3,5,5,2]:[4,6,6,3],d=s.d;d.L=L;d.nodes=[];d.edges=[];d.pulses=[];d.acc=0;
+    L.forEach((n,li)=>{for(let j=0;j<n;j++)d.nodes.push({li,j,n,act:0,lit:false,fired:false,out:[]});});
+    d.nodes.forEach((a,ai)=>d.nodes.forEach((b,bi)=>{if(b.li===a.li+1){d.edges.push([ai,bi]);a.out.push(d.edges.length-1);}}));
+    this.nn=d;
+  }
+  layoutNN(s){const {w,h,d}=s;const padX=Math.max(40,w*.1),padY=70;
+    d.nodes.forEach(n=>{n.x=padX+n.li*(w-2*padX)/(d.L.length-1);const sp=Math.min(72,(h-2*padY)/Math.max(1,n.n-1));n.y=h/2+(n.j-(n.n-1)/2)*sp;});}
+  fireNode(n,all){const d=this.nn;let outs=n.out.slice();if(!all){outs.sort(()=>Math.random()-.5);outs=outs.slice(0,3);}
+    outs.forEach(ei=>d.pulses.push({e:ei,p:0,sp:1.1+Math.random()*0.5,sim:true}));}
+  drawNN(s,t,dt){
+    const {ctx,w,h,d}=s;if(s.resized||d.nodes[0].x===undefined)this.layoutNN(s);ctx.clearRect(0,0,w,h);
+    const sim=this.state.sim,paused=sim==='paused',last=d.L.length-1,m=this.local(s);
+    if(!paused&&sim!=='running'){d.acc+=dt;if(d.acc>0.32){d.acc=0;d.pulses.push({e:(Math.random()*d.edges.length)|0,p:0,sp:0.8+Math.random()*0.6,sim:false});}}
+    if(!paused){for(let i=d.pulses.length-1;i>=0;i--){const q=d.pulses[i];q.p+=dt*q.sp;if(q.p>=1){d.pulses.splice(i,1);const tn=d.nodes[d.edges[q.e][1]];tn.act=1;
+      if(q.sim){if(tn.li===last)tn.lit=true;else if(!tn.fired){tn.fired=true;this.fireNode(tn,tn.li===last-1);}}}}
+      d.nodes.forEach(n=>{if(!n.lit)n.act*=Math.exp(-dt*1.8);});}
+    if(sim==='running'&&!d.pulses.some(q=>q.sim)){this.setState({sim:'complete'});}
+    d.nodes.forEach(n=>{const dd=Math.hypot(n.x-m.x,n.y-m.y);n.hov=Math.max(0,1-dd/110);});
+    ctx.lineWidth=1;
+    for(const [a,b] of d.edges){const A=d.nodes[a],B=d.nodes[b];const al=0.05+Math.max(A.act*0.5,B.hov*0.25,A.hov*0.25)*0.6;
+      ctx.strokeStyle=`rgba(160,190,255,${al})`;ctx.beginPath();ctx.moveTo(A.x,A.y);ctx.lineTo(B.x,B.y);ctx.stroke();}
+    for(const q of d.pulses){const [a,b]=d.edges[q.e];const A=d.nodes[a],B=d.nodes[b];const x=lerp(A.x,B.x,q.p),y=lerp(A.y,B.y,q.p);const c=q.sim?CYAN:BLUE;
+      const x0=lerp(A.x,B.x,Math.max(0,q.p-0.12)),y0=lerp(A.y,B.y,Math.max(0,q.p-0.12));const g=ctx.createLinearGradient(x0,y0,x,y);g.addColorStop(0,rgba(c,0));g.addColorStop(1,rgba(c,0.9));
+      ctx.strokeStyle=g;ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x,y);ctx.stroke();
+      ctx.fillStyle=rgba(c,0.2);ctx.beginPath();ctx.arc(x,y,6,0,6.28);ctx.fill();ctx.fillStyle='#F5F7FA';ctx.beginPath();ctx.arc(x,y,1.6,0,6.28);ctx.fill();}
+    ctx.lineWidth=1;
+    for(const n of d.nodes){const a=Math.max(n.act,n.hov*0.7);const r=n.li===last?8:6;const c=n.lit?CYAN:BLUE;
+      if(a>0.04){ctx.fillStyle=rgba(c,a*0.22);ctx.beginPath();ctx.arc(n.x,n.y,r+10*a,0,6.28);ctx.fill();}
+      ctx.fillStyle=n.lit?rgba(CYAN,0.9):'#0B0D10';ctx.beginPath();ctx.arc(n.x,n.y,r,0,6.28);ctx.fill();
+      ctx.strokeStyle=`rgba(245,247,250,${0.3+a*0.7})`;ctx.stroke();
+      if(!n.lit&&a>0.1){ctx.fillStyle=rgba(c,a);ctx.beginPath();ctx.arc(n.x,n.y,r*0.45,0,6.28);ctx.fill();}}
+    ctx.font='10px "JetBrains Mono", monospace';ctx.fillStyle='rgba(141,150,163,0.95)';ctx.textAlign='center';
+    const names=['INPUT','HIDDEN 01','HIDDEN 02','OUTPUT'];d.L.forEach((_,li)=>{const n=d.nodes.find(x=>x.li===li);ctx.fillText(names[li],n.x,28);});ctx.textAlign='left';
+  }
+  runSim=()=>{const d=this.nn;if(!d)return;d.pulses=d.pulses.filter(q=>!q.sim);d.nodes.forEach(n=>{n.fired=false;n.lit=false;n.act=0;});
+    d.nodes.filter(n=>n.li===0).forEach(n=>{n.act=1;n.fired=true;this.fireNode(n,true);});this.setState({sim:'running'});};
+  pauseSim=()=>{const s=this.state.sim;if(s==='running')this.setState({sim:'paused'});else if(s==='paused')this.setState({sim:'running'});};
+  resetSim=()=>{const d=this.nn;if(d){d.pulses=[];d.nodes.forEach(n=>{n.fired=false;n.lit=false;n.act=0;});}this.setState({sim:'idle'});};
+
+  initScan(s){s.d.t0=null;}
+  drawScan(s,t,dt){
+    const {ctx,w,h,d}=s;if(d.t0===null||this.rescanFlag){d.t0=t;this.rescanFlag=false;OBJS.forEach(o=>o.found=null);if(this.state.detN||this.state.scanDone)this.setState({detN:0,scanDone:false});}
+    const ct=t-d.t0;if(ct>8){d.t0=null;}
+    const sp=Math.min(1,ct/3.6),sy=sp*h;
+    const bg=ctx.createLinearGradient(0,0,0,h);bg.addColorStop(0,'#0C1016');bg.addColorStop(1,'#06070A');ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
+    const hz=h*.74,vx=w*.5;ctx.strokeStyle='rgba(140,180,255,0.09)';ctx.lineWidth=1;
+    for(let i=-12;i<=12;i++){ctx.beginPath();ctx.moveTo(vx+i*w*0.02,hz);ctx.lineTo(vx+i*w*0.16,h);ctx.stroke();}
+    for(let k=0;k<7;k++){const y=hz+(h-hz)*Math.pow(k/6,1.8);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
+    const hg=ctx.createLinearGradient(0,hz-60,0,hz);hg.addColorStop(0,'rgba(76,141,255,0)');hg.addColorStop(1,'rgba(76,141,255,0.07)');ctx.fillStyle=hg;ctx.fillRect(0,hz-60,w,60);
+    for(const o of OBJS){const X=o.x*w,Y=o.y*h,W=o.w*w,H=o.h*h;
+      ctx.fillStyle='rgba(0,0,0,0.5)';ctx.beginPath();ctx.ellipse(X+W/2,Y+H+2,W*0.55,Math.max(4,H*0.06),0,0,6.28);ctx.fill();
+      if(o.type==='sphere'){const r=Math.min(W,H)/2;const cx=X+W/2,cy=Y+H-r;const g=ctx.createRadialGradient(cx-r*.35,cy-r*.4,r*.1,cx,cy,r);g.addColorStop(0,'#3A4555');g.addColorStop(0.6,'#161B22');g.addColorStop(1,'#0A0C10');ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,r,0,6.28);ctx.fill();ctx.strokeStyle='rgba(245,247,250,0.12)';ctx.stroke();}
+      else if(o.type==='cube'){const s2=Math.min(W,H)*0.78,ox=s2*0.28,x0=X+(W-s2-ox)/2,y0=Y+H-s2;
+        ctx.fillStyle='#141920';ctx.fillRect(x0,y0,s2,s2);ctx.fillStyle='#1E2530';ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x0+ox,y0-ox*0.7);ctx.lineTo(x0+s2+ox,y0-ox*0.7);ctx.lineTo(x0+s2,y0);ctx.fill();
+        ctx.fillStyle='#0D1015';ctx.beginPath();ctx.moveTo(x0+s2,y0);ctx.lineTo(x0+s2+ox,y0-ox*0.7);ctx.lineTo(x0+s2+ox,y0+s2-ox*0.7);ctx.lineTo(x0+s2,y0+s2);ctx.fill();
+        ctx.strokeStyle='rgba(245,247,250,0.14)';ctx.strokeRect(x0,y0,s2,s2);}
+      else{const g=ctx.createLinearGradient(X,0,X+W,0);g.addColorStop(0,'#232B36');g.addColorStop(1,'#0B0E12');ctx.fillStyle=g;ctx.fillRect(X+W*0.2,Y,W*0.6,H);ctx.strokeStyle='rgba(245,247,250,0.1)';ctx.strokeRect(X+W*0.2,Y,W*0.6,H);}
+    }
+    let n=0;
+    for(const o of OBJS){const X=o.x*w,Y=o.y*h,W=o.w*w,H=o.h*h;if(!o.found&&sy>Y+H*0.6)o.found=t;if(!o.found)continue;n++;
+      const age=t-o.found,a=Math.min(1,age*3),pad=8,x0=X-pad,y0=Y-pad,BW=W+pad*2,BH=H+pad*2,L=Math.min(14,BW/4);
+      ctx.strokeStyle=rgba(CYAN,0.3*a);ctx.lineWidth=1;ctx.setLineDash([3,4]);ctx.strokeRect(x0,y0,BW,BH);ctx.setLineDash([]);
+      ctx.strokeStyle=rgba(CYAN,a);ctx.lineWidth=1.5;ctx.beginPath();
+      [[x0,y0,1,1],[x0+BW,y0,-1,1],[x0,y0+BH,1,-1],[x0+BW,y0+BH,-1,-1]].forEach(([x,y,p,q])=>{ctx.moveTo(x+p*L,y);ctx.lineTo(x,y);ctx.lineTo(x,y+q*L);});ctx.stroke();
+      const conf=(o.c*Math.min(1,age/0.9)).toFixed(1);const fs=w<500?9:11;ctx.font=`500 ${fs}px "JetBrains Mono", monospace`;const label=`${o.label}  ${conf}%`;const tw=ctx.measureText(label).width;
+      ctx.fillStyle=rgba(CYAN,0.92*a);ctx.fillRect(x0,y0-fs-10,tw+12,fs+8);ctx.fillStyle='#050505';ctx.fillText(label,x0+6,y0-7);
+      if(w>500){ctx.font='9px "JetBrains Mono", monospace';ctx.fillStyle=rgba(CYAN,0.7*a);ctx.fillText(`x:${o.x.toFixed(3)} y:${o.y.toFixed(3)} w:${o.w.toFixed(2)}`,x0,y0+BH+14);}}
+    if(sp<1){const g=ctx.createLinearGradient(0,sy-70,0,sy);g.addColorStop(0,rgba(CYAN,0));g.addColorStop(1,rgba(CYAN,0.14));ctx.fillStyle=g;ctx.fillRect(0,sy-70,w,70);ctx.fillStyle=rgba(CYAN,0.95);ctx.fillRect(0,sy,w,1.2);
+      ctx.font='9px "JetBrains Mono", monospace';ctx.fillStyle=rgba(CYAN,0.9);ctx.textAlign='right';ctx.fillText(`Y ${(sp*100).toFixed(0).padStart(3,'0')}`,w-12,sy-6);ctx.textAlign='left';}
+    const m=this.local(s);if(m.x>0&&m.x<w&&m.y>0&&m.y<h){ctx.strokeStyle='rgba(245,247,250,0.25)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(m.x-14,m.y);ctx.lineTo(m.x+14,m.y);ctx.moveTo(m.x,m.y-14);ctx.lineTo(m.x,m.y+14);ctx.stroke();
+      ctx.font='9px "JetBrains Mono", monospace';ctx.fillStyle='rgba(245,247,250,0.5)';ctx.fillText(`${(m.x/w).toFixed(2)}, ${(m.y/h).toFixed(2)}`,m.x+10,m.y-10);}
+    if(n!==this.state.detN)this.setState({detN:n});
+    const done=sp>=1;if(done!==this.state.scanDone)this.setState({scanDone:done});
+  }
+  rescan=()=>{this.rescanFlag=true;};
+
+  initFlow(s){s.d.ps=Array.from({length:46},()=>({p:Math.random(),sp:0.06+Math.random()*0.08,o:(Math.random()-.5)*6,s:Math.random()*1.4+0.8}));}
+  drawFlow(s,t,dt){
+    const {ctx,w,h,d}=s;ctx.clearRect(0,0,w,h);const vert=this.isMob;const ly=36,lx=8;
+    const pt=p=>vert?[lx,p*h]:[p*w,ly];
+    const [a0,b0]=pt(0),[a1,b1]=pt(1);const g=ctx.createLinearGradient(a0,b0,a1,b1);g.addColorStop(0,rgba(BLUE,0.35));g.addColorStop(0.5,rgba(VIOLET,0.35));g.addColorStop(1,rgba(CYAN,0.35));
+    ctx.strokeStyle=g;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(a0,b0);ctx.lineTo(a1,b1);ctx.stroke();
+    for(const p of d.ps){p.p+=dt*p.sp;if(p.p>1)p.p-=1;const [x,y]=pt(p.p);const c=p.p<.5?mixC(BLUE,VIOLET,p.p*2):mixC(VIOLET,CYAN,(p.p-.5)*2);
+      const ox=vert?p.o:0,oy=vert?0:p.o;ctx.fillStyle=rgba(c,0.18);ctx.beginPath();ctx.arc(x+ox,y+oy,p.s*3,0,6.28);ctx.fill();ctx.fillStyle=rgba(c,0.95);ctx.beginPath();ctx.arc(x+ox,y+oy,p.s,0,6.28);ctx.fill();}
+  }
+
+  initGenOut(s){const N=150,d=s.d;d.ps=[];const rings=[[22,0.2],[48,0.34],[80,0.48]];let i=0;
+    rings.forEach(([n,r],ri)=>{for(let k=0;k<n;k++){const a=k/n*Math.PI*2;d.ps.push({tx:Math.cos(a)*r,ty:Math.sin(a)*r,ri,a:Math.random()*6.28,rr:Math.random()*0.5+0.1,sp:(Math.random()-.5)*3,x:0,y:0});i++;}});
+    d.t0=null;}
+  drawGenOut(s,t,dt){
+    const {ctx,w,h,d}=s;ctx.clearRect(0,0,w,h);if(d.t0===null)d.t0=t;let ct=t-d.t0;if(ct>8){d.t0=t;ct=0;}
+    const P=3.6,prog=Math.min(1,ct/P),m=ct<P?0:Math.min(1,(ct-P)/1.4),em=1-Math.pow(1-m,3);
+    const pct=Math.round(prog*100);if(pct!==d.lastPct){d.lastPct=pct;const pr=this.ref('prog').current,pt=this.ref('progTxt').current,pl=this.ref('progLabel').current;
+      if(pr)pr.style.width=pct+'%';if(pt)pt.textContent=pct+'%';if(pl){pl.textContent=pct<100?'SAMPLING':'COMPLETE';pl.style.color=pct<100?'#8D96A3':'#3FD3E8';}}
+    const cx=w/2,cy=h/2,sc=Math.min(w,h)*0.95,rot=t*0.25;
+    if(em>0.05){ctx.strokeStyle=rgba(VIOLET,0.25*em);ctx.lineWidth=0.7;ctx.beginPath();}
+    d.ps.forEach(p=>{p.a+=dt*p.sp;const cxp=Math.cos(p.a)*p.rr*(0.6+0.4*Math.sin(t+p.rr*9)),cyp=Math.sin(p.a*1.3)*p.rr*0.6;
+      const ra=rot*(p.ri%2?-1:1),tx=p.tx*Math.cos(ra)-p.ty*Math.sin(ra),ty=p.tx*Math.sin(ra)+p.ty*Math.cos(ra);
+      p.x=cx+lerp(cxp,tx,em)*sc;p.y=cy+lerp(cyp,ty,em)*sc;});
+    if(em>0.05){d.ps.forEach((p,i)=>{if(i%4===0){ctx.moveTo(cx,cy);ctx.lineTo(p.x,p.y);}});ctx.stroke();}
+    d.ps.forEach((p,i)=>{const c=p.ri===0?CYAN:p.ri===1?VIOLET:BLUE;ctx.fillStyle=rgba(c,0.4+0.5*(em||prog*0.6));ctx.beginPath();ctx.arc(p.x,p.y,em>0.5&&i%9===0?2.2:1.3,0,6.28);ctx.fill();});
+    if(em>0.2){ctx.fillStyle=rgba(CYAN,em);ctx.beginPath();ctx.arc(cx,cy,3,0,6.28);ctx.fill();}
+  }
+
+  initFuture(s){s.d.ps=Array.from({length:this.isMob?50:110},()=>({x:Math.random(),y:Math.random(),v:0.01+Math.random()*0.03,s:Math.random()*1.4+0.4}));}
+  drawFuture(s,t,dt){
+    const {ctx,w,h,d}=s;ctx.clearRect(0,0,w,h);
+    const R=Math.max(w*1.1,900),cx=w/2,cy=h+R*0.82;
+    const glow=ctx.createRadialGradient(cx,h,0,cx,h,Math.max(w,h)*0.8);glow.addColorStop(0,rgba(BLUE,0.28+0.04*Math.sin(t*0.8)));glow.addColorStop(0.35,rgba(VIOLET,0.08));glow.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=glow;ctx.fillRect(0,0,w,h);
+    for(const p of d.ps){p.y-=p.v*dt;if(p.y<0){p.y=1;p.x=Math.random();}const a=Math.pow(p.y,1.5)*0.7;ctx.fillStyle=`rgba(200,220,255,${a})`;ctx.fillRect(p.x*w,p.y*h,p.s,p.s);}
+    ctx.fillStyle='#050505';ctx.beginPath();ctx.arc(cx,cy,R,0,6.28);ctx.fill();
+    [[24,0.05],[10,0.12],[3,0.35],[1,0.9]].forEach(([lw,a])=>{ctx.strokeStyle=`rgba(170,205,255,${a})`;ctx.lineWidth=lw;ctx.beginPath();ctx.arc(cx,cy,R,Math.PI*1.1,Math.PI*1.9);ctx.stroke();});
+  }
+
+  // ---------- cursor / magnet ----------
+  cursorTick(){
+    if(!this.fine)return;const dot=this.ref('dot').current,ring=this.ref('ring').current;if(!dot||!ring)return;
+    const m=this.mouse,k=this.reduced?1:0.2;this.ringP.x+=(m.x-this.ringP.x)*k;this.ringP.y+=(m.y-this.ringP.y)*k;this.ringS+=((this.cHover?1.8:1)-this.ringS)*0.18;
+    dot.style.transform=`translate(${m.x}px,${m.y}px)`;ring.style.transform=`translate(${this.ringP.x}px,${this.ringP.y}px) scale(${this.ringS})`;
+    ring.style.borderColor=this.cHover?'rgba(63,211,232,0.8)':'rgba(245,247,250,0.45)';
+  }
+  magnet(e){
+    if(!this.fine||this.reduced)return;
+    document.querySelectorAll('[data-magnetic]').forEach(el=>{const r=el.getBoundingClientRect();const dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);
+      const inside=Math.abs(dx)<r.width/2+24&&Math.abs(dy)<r.height/2+24;
+      el.style.transition=inside?'transform .15s ease-out':'transform .6s cubic-bezier(.16,.84,.3,1)';el.style.transform=inside?`translate(${dx*0.16}px,${dy*0.3}px)`:'translate(0,0)';});
+  }
+  cardEnter=e=>{this.hover[e.currentTarget.dataset.k]=true;};
+  cardMove=e=>{if(!this.fine||this.reduced)return;const el=e.currentTarget,r=el.getBoundingClientRect();const px=(e.clientX-r.left)/r.width-.5,py=(e.clientY-r.top)/r.height-.5;
+    el.style.transform=`perspective(1000px) rotateX(${-py*5}deg) rotateY(${px*6}deg) translateY(-6px)`;};
+  cardLeave=e=>{const el=e.currentTarget;this.hover[el.dataset.k]=false;el.style.transform='';};
+
+  // ---------- playground ----------
+  // Swap this for a real API call (e.g. fetch('/api/generate',{method:'POST',body:JSON.stringify({prompt})})) — UI expects a Promise<string>.
+  generate(prompt){return new Promise(res=>setTimeout(()=>res(this.localModel(prompt)),this.reduced?200:900+Math.random()*600));}
+  localModel(p){const q=p.toLowerCase();
+    if(/generat|create|image|text/.test(q))return ANSWERS.gen;
+    if(/neural|network|layer|neuron/.test(q))return ANSWERS.nn;
+    if(/machine learning|\bml\b|learn|train|data/.test(q))return ANSWERS.ml;
+    if(/\bai\b|artificial|intelligen/.test(q))return ANSWERS.ai;
+    return `You asked: “${p.trim().slice(0,90)}”. This playground runs a local simulation, so it answers best on the fundamentals — artificial intelligence, machine learning, neural networks and generative models. Try one of the examples, or connect a real model to go further.`;}
+  runAI=async()=>{
+    if(this.state.busy)return;const p=(this.state.prompt||'').trim();if(!p)return;
+    clearInterval(this.typeT);this.setState({busy:true,phase:'processing',resp:'',latency:null});
+    const t0=performance.now();const text=await this.generate(p);const lat=Math.round(performance.now()-t0);
+    this.setState({phase:'responding',latency:lat});let i=0;
+    this.typeT=setInterval(()=>{i+=this.reduced?text.length:3;this.setState({resp:text.slice(0,i)});
+      if(i>=text.length){clearInterval(this.typeT);this.setState({busy:false,phase:'complete'});}},16);
+  };
+  setPrompt=e=>this.setState({prompt:e.target.value});
+  promptKey=e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){e.preventDefault();this.runAI();}};
+
+  renderVals(){
+    const s=this.state,act=s.active,mob=s.mobile;
+    const navItems=[['intelligence','Intelligence'],['neural','Neural Lab'],['playground','Playground'],['vision','Vision'],['timeline','Timeline']].map(([id,l],i)=>({
+      href:'#'+id,label:l,num:'0'+(i+1),current:act===id?'true':'false',color:act===id?'#F5F7FA':'#8D96A3',mColor:act===id?'#3FD3E8':'#F5F7FA',bar:act===id?'100%':'0%'}));
+    const sim=s.sim;
+    const simMap={idle:['READY','STANDBY','AWAITING'],running:['STREAMING','ACTIVE','COMPUTING'],paused:['HELD','PAUSED','PENDING'],complete:['RECEIVED','DONE','READY']}[sim];
+    const hi=c=>c==='ACTIVE'||c==='STREAMING'||c==='COMPUTING'?'#3FD3E8':c==='READY'||c==='DONE'||c==='RECEIVED'?'#F5F7FA':'#8D96A3';
+    const phaseMap={idle:['IDLE','#5E6672'],processing:['PROCESSING','#9B7BFF'],responding:['RESPONDING','#3FD3E8'],complete:['COMPLETE','#F5F7FA']}[s.phase];
+    const anim=s.phase==='processing'||s.phase==='responding';
+    const wordCount=s.resp?s.resp.split(/\s+/).filter(Boolean).length:0;
+    return {
+      rootRef:this.ref('root'),heroRef:this.ref('hero'),mlRef:this.ref('ml'),genRef:this.ref('gen'),visRef:this.ref('vis'),nnRef:this.ref('nn'),
+      scanRef:this.ref('scan'),flowRef:this.ref('flow'),genOutRef:this.ref('genOut'),futureRef:this.ref('future'),dotRef:this.ref('dot'),ringRef:this.ref('ring'),
+      progRef:this.ref('prog'),progTxtRef:this.ref('progTxt'),progLabelRef:this.ref('progLabel'),
+      loaderShow:!s.loaderGone,loaderOp:s.loading?1:0,loaderPE:s.loading?'auto':'none',loaderPct:(s.step/5*100)+'%',
+      loaderRows:['NEURAL CORE','VISION ENGINE','LANGUAGE MODEL','SIMULATION'].map((n,i)=>({name:n,val:s.step>i?'100%':'···',op:s.step>i?1:0.25})),
+      readyText:s.step>=5?'SYSTEM READY':'BOOTING…',readyColor:s.step>=5?'#3FD3E8':'#8D96A3',skipLoad:this.finishLoad,
+      fine:s.fine,desktop:!mob,mobile:mob,navDesk:!s.navMob,navMob:!!s.navMob,
+      navPad:s.scrolled?'10px clamp(12px,3vw,40px)':'20px clamp(12px,3vw,40px)',
+      navBg:s.scrolled||s.menu?'rgba(9,10,12,0.72)':'rgba(9,10,12,0)',navBorder:s.scrolled?'rgba(245,247,250,0.09)':'rgba(245,247,250,0)',
+      navItems,menuOpen:s.menu&&!!s.navMob,menuLabel:s.menu?'CLOSE':'MENU',toggleMenu:()=>this.setState({menu:!s.menu}),closeMenu:()=>this.setState({menu:false}),
+      cardEnter:this.cardEnter,cardMove:this.cardMove,cardLeave:this.cardLeave,
+      runSim:this.runSim,pauseSim:this.pauseSim,resetSim:this.resetSim,
+      runDisabled:sim==='running'||sim==='paused',runOp:sim==='running'||sim==='paused'?0.45:1,
+      pauseDisabled:sim==='idle'||sim==='complete',pauseOp:sim==='idle'||sim==='complete'?0.4:1,pauseLabel:sim==='paused'?'[ RESUME ]':'[ PAUSE ]',
+      simDot:sim==='running'?'#3FD3E8':sim==='paused'?'#9B7BFF':sim==='complete'?'#F5F7FA':'#4C8DFF',
+      simRows:[{k:'INPUT',v:simMap[0]},{k:'PROCESSING',v:simMap[1]},{k:'LAYERS',v:'04'},{k:'OUTPUT',v:simMap[2]}].map(r=>({...r,c:r.k==='LAYERS'?'#F5F7FA':hi(r.v)})),
+      prompt:s.prompt,setPrompt:this.setPrompt,promptKey:this.promptKey,busy:s.busy,runAI:this.runAI,runLabel:s.busy?'PROCESSING…':'RUN AI →',
+      examples:Object.keys(PROMPTS).map(l=>({label:l,onClick:()=>{if(this.state.busy)return;this.setState({prompt:PROMPTS[l]},this.runAI);}})),
+      resp:s.resp,showIdle:s.phase==='idle',showProcessing:s.phase==='processing',showCaret:s.phase==='responding'||s.phase==='processing'&&false,
+      phaseLabel:phaseMap[0],phaseColor:phaseMap[1],
+      dotAnim1:anim?'pulse 1s ease-in-out infinite':'none',dotAnim2:anim?'pulse 1s ease-in-out .15s infinite':'none',dotAnim3:anim?'pulse 1s ease-in-out .3s infinite':'none',
+      tokens:String(wordCount).padStart(3,'0'),latency:s.latency==null?'—':s.latency+'ms (simulated)',
+      scanStatus:s.scanDone?'ANALYSIS COMPLETE':'SCANNING…',scanColor:s.scanDone?'#3FD3E8':'#F5F7FA',rescan:this.rescan,
+      detections:OBJS.map((o,i)=>({label:o.label,conf:i<s.detN?o.c.toFixed(1)+'%':'—',op:i<s.detN?1:0.3,w:i<s.detN?o.c+'%':'0%'})),
+      stages:[{n:'01',t:'IDEA',d:'A thought, a question, a spark.',c:'#4C8DFF'},{n:'02',t:'PROMPT',d:'The idea, translated into words.',c:'#7E86FF'},{n:'03',t:'MODEL',d:'Patterns learned from millions of examples.',c:'#9B7BFF'},{n:'04',t:'CREATION',d:'Something that did not exist before.',c:'#3FD3E8'}],
+      stageCols:mob?'1fr':'repeat(4,minmax(0,1fr))',stageGap:mob?'8px':'24px',stagePadL:mob?'40px':'0px',stageDotML:mob?'-40px':'0px'
+    };
+  }
+}
+</script>
+</body>
+</html>
